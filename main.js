@@ -5,7 +5,6 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const startBtn = document.getElementById('startBtn');
-  const hardBtn = document.getElementById('hardBtn');
   const overlay = document.getElementById('overlay');
   const scoreEl = document.getElementById('score');
   const livesEl = document.getElementById('lives');
@@ -37,7 +36,12 @@
   let touchX = null;
   let touchPressed = false;
 
-  window.addEventListener('keydown', e => (keys[e.code] = true));
+  window.addEventListener('keydown', e => {
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'KeyK'].includes(e.code)) {
+      e.preventDefault();
+    }
+    keys[e.code] = true;
+  });
   window.addEventListener('keyup', e => (keys[e.code] = false));
   canvas.addEventListener('touchstart', e => { e.preventDefault(); touchPressed = true; touchX = e.touches[0].clientX; });
   canvas.addEventListener('touchmove', e => { e.preventDefault(); touchX = e.touches[0].clientX; });
@@ -108,16 +112,17 @@
   let wave = 1;
   let waveTimer = 0;
 
-  function startGame(selectedDifficulty='normal'){
+function startGame(selectedDifficulty='normal'){
     difficulty = selectedDifficulty;
-    running = true; overlay.classList.remove('visible');
+    running = true;
+    overlay.style.display = 'none';
     score = 0; lives = 3; wave = 1; waveTimer = 0; enemies.length=0; bullets.length=0; enemyBullets.length=0; player.reset();
     updateHUD();
     last = performance.now();
     requestAnimationFrame(loop);
   }
 
-  function endGame(){ running = false; overlay.classList.add('visible'); startBtn.textContent = 'Restart'; }
+  function endGame(){ running = false; overlay.style.display = 'flex'; startBtn.textContent = 'Restart'; }
 
   function updateHUD(){ scoreEl.textContent = `Score: ${score}`; livesEl.textContent = `Lives: ${lives}`; }
 
@@ -328,7 +333,7 @@
 
   // Start / UI events
   startBtn.addEventListener('click', () => startGame('normal'));
-  hardBtn.addEventListener('click', () => startGame('hard'));
+  
 
   // mobile control buttons
   const btnLeft = document.getElementById('btn-left');
