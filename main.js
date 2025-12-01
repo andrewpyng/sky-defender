@@ -43,6 +43,17 @@
   canvas.addEventListener('touchmove', e => { e.preventDefault(); touchX = e.touches[0].clientX; });
   canvas.addEventListener('touchend', e => { e.preventDefault(); touchPressed = false; touchX = null; });
 
+  // tiny WebAudio-based sound helper (synth + noise) — works without external files
+  const sound = (function(){
+    let ctx = null;
+    function ensure(){ if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playShoot(){ ensure(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = 820; g.gain.value = 0.07; o.connect(g); g.connect(ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09); o.stop(ctx.currentTime + 0.09); }
+    function playHit(){ ensure(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = 'square'; o.frequency.value = 520; g.gain.value = 0.08; o.connect(g); g.connect(ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14); o.stop(ctx.currentTime + 0.14); }
+    function playExplode(){ ensure(); const bufferSize = 2 * ctx.sampleRate; const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate); const data = buffer.getChannelData(0); for (let i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * (1 - i/bufferSize); } const src = ctx.createBufferSource(); const g = ctx.createGain(); src.buffer = buffer; g.gain.value = 0.18; src.connect(g); g.connect(ctx.destination); src.start(); setTimeout(()=>{ try{ src.stop(); }catch(e){} }, 400);
+    }
+    return { play(n){ if (navigator.userAgent.includes('bot')) return; try{ if (n === 'shoot') playShoot(); else if (n === 'hit') playHit(); else if (n === 'explode') playExplode(); }catch(e){} } };
+  })();
+
   // Entities
   const player = {
     x: 240, y: 680, w: 34, h: 40, speed: 240, cooldown: 0, maxCooldown: 0.15,
@@ -70,10 +81,13 @@
   const bullets = [];
   const enemies = [];
   const enemyBullets = [];
+  const particles = [];
 
   // bullets
   function spawnPlayerBullet(x, y) {
     bullets.push({x,y,w:6,h:12,vy:-520,age:0});
+    // shoot sound
+    sound.play('shoot');
   }
 
   // enemies
@@ -191,7 +205,14 @@
         if (collide(b, e)){
           bullets.splice(j,1);
           e.hp -= 1;
-          if (e.hp <= 0){ score += e.score; enemies.splice(i,1); }
+          // hit effect
+          spawnParticles(e.x, e.y, 6, '#ffd166');
+          sound.play('hit');
+          if (e.hp <= 0){ score += e.score; // explosion
+            spawnParticles(e.x, e.y, 18, '#ff6b6b');
+            sound.play('explode');
+            enemies.splice(i,1);
+          }
           break;
         }
       }
@@ -211,6 +232,7 @@
     bullets.forEach(drawBullet);
     enemyBullets.forEach(drawEnemyBullet);
     enemies.forEach(drawEnemy);
+    particles.forEach(drawParticle);
 
     player.draw();
 
@@ -222,11 +244,36 @@
 
     function loseLife(){
       lives -= 1; updateHUD();
+      // player explosion
+      spawnParticles(player.x, player.y, 28, '#ff9f1c');
+      sound.play('explode');
       // death flash
       flash(200, '#ff8fa3');
       if (lives <= 0) { endGame(); }
     }
   }
+
+  // particle system
+  function spawnParticles(x, y, count = 8, color = '#fff'){
+    for (let i=0;i<count;i++){
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 160 + 40;
+      particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,age:0,ttl:0.6 + Math.random()*0.8,color});
+    }
+  }
+
+  // update/draw particles every frame
+  (function particleTick(){
+    for (let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.age += 1/60;
+      p.x += p.vx / 60; p.y += p.vy / 60;
+      p.vx *= 0.98; p.vy *= 0.98;
+      if (p.age > p.ttl) particles.splice(i,1);
+    }
+    // draw particles in main loop; keep this running so particles are processed
+    requestAnimationFrame(particleTick);
+  })();
 
   // drawing helpers
   let starPhase = 0;
@@ -263,6 +310,12 @@
     ctx.restore();
   }
 
+  function drawParticle(p){
+    const t = 1 - (p.age / p.ttl);
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, t)); ctx.fillStyle = p.color || '#fff';
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, t*4), 0, Math.PI*2); ctx.fill(); ctx.restore();
+  }
+
   // screen flash
   let flashAlpha = 0; let flashColor = '#fff';
   function flash(ms, color){ flashAlpha = 1; flashColor = color || '#fff'; setTimeout(()=> flashAlpha = 0, ms); }
@@ -276,6 +329,28 @@
   // Start / UI events
   startBtn.addEventListener('click', () => startGame('normal'));
   hardBtn.addEventListener('click', () => startGame('hard'));
+
+  // mobile control buttons
+  const btnLeft = document.getElementById('btn-left');
+  const btnRight = document.getElementById('btn-right');
+  const btnFire = document.getElementById('btn-fire');
+  if (btnLeft && btnRight && btnFire){
+    const bind = (el, on, off, key) => {
+      el.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; });
+      el.addEventListener('mousedown', e => { e.preventDefault(); keys[key] = true; });
+      const release = e => { e && e.preventDefault(); keys[key] = false; };
+      el.addEventListener('touchend', release);
+      el.addEventListener('mouseup', release);
+      el.addEventListener('mouseleave', release);
+    };
+    bind(btnLeft,'down','up','ArrowLeft');
+    bind(btnRight,'down','up','ArrowRight');
+    // fire acts like spacebar
+    btnFire.addEventListener('touchstart', e => { e.preventDefault(); keys['Space'] = true; });
+    btnFire.addEventListener('mousedown', e => { e.preventDefault(); keys['Space'] = true; });
+    btnFire.addEventListener('touchend', e => { e && e.preventDefault(); keys['Space'] = false; });
+    btnFire.addEventListener('mouseup', e => { e && e.preventDefault(); keys['Space'] = false; });
+  }
 
   // allow clicking canvas to shoot on desktop
   canvas.addEventListener('mousedown', (e) => { keys['Space'] = true; setTimeout(()=> keys['Space'] = false, 160); });

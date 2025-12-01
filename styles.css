@@ -22,3 +22,10 @@ button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);
   #menu{width:92vw;padding:18px}
   #game{width:100vw;height:86vh;border-radius:0;margin:0;}
 }
+
+.mobile-controls{position:fixed;left:0;right:0;bottom:18px;display:flex;gap:18px;justify-content:center;pointer-events:auto}
+.mobile-btn{width:72px;height:72px;border-radius:999px;border:none;background:rgba(255,255,255,0.06);color:var(--muted);font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 16px rgba(0,0,0,0.35);}
+.mobile-btn.fire{background:linear-gradient(90deg,#ffd166,#ff6b6b);color:#012;font-weight:800}
+.mobile-btn:active{transform:translateY(2px);}
+
+@media(min-width:520px){ .mobile-controls{display:none} }
