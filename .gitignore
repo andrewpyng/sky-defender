@@ -1,0 +1,14 @@
+# Node/npm stuff (none required)
+node_modules/
+.DS_Store
+.vscode/
+
+# local server
+npm-debug.log
+coverage/
+
+# macOS
+*.DS_Store
+
+# built site
+/dist
