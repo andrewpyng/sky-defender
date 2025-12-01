@@ -36,12 +36,7 @@
   let touchX = null;
   let touchPressed = false;
 
-  window.addEventListener('keydown', e => {
-    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space', 'KeyK'].includes(e.code)) {
-      e.preventDefault();
-    }
-    keys[e.code] = true;
-  });
+  window.addEventListener('keydown', e => (keys[e.code] = true));
   window.addEventListener('keyup', e => (keys[e.code] = false));
   canvas.addEventListener('touchstart', e => { e.preventDefault(); touchPressed = true; touchX = e.touches[0].clientX; });
   canvas.addEventListener('touchmove', e => { e.preventDefault(); touchX = e.touches[0].clientX; });
@@ -114,15 +109,14 @@
 
 function startGame(selectedDifficulty='normal'){
     difficulty = selectedDifficulty;
-    running = true;
-    overlay.style.display = 'none';
+    running = true; overlay.classList.remove('visible');
     score = 0; lives = 3; wave = 1; waveTimer = 0; enemies.length=0; bullets.length=0; enemyBullets.length=0; player.reset();
     updateHUD();
     last = performance.now();
     requestAnimationFrame(loop);
   }
 
-  function endGame(){ running = false; overlay.style.display = 'flex'; startBtn.textContent = 'Restart'; }
+  function endGame(){ running = false; overlay.classList.add('visible'); startBtn.textContent = 'Restart'; }
 
   function updateHUD(){ scoreEl.textContent = `Score: ${score}`; livesEl.textContent = `Lives: ${lives}`; }
 
