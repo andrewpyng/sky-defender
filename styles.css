@@ -6,9 +6,10 @@ html,body{height:100%;margin:0;background:linear-gradient(#01121b,#04172b 60%);c
 #title{font-weight:700;color:var(--accent);letter-spacing:1px;font-size:14px}
 #hud{pointer-events:auto}
 #hud>div{display:inline-block;margin-left:12px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:6px;font-size:13px}
-#overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
-#overlay.visible{background:linear-gradient(0deg,rgba(0,0,0,0.5),transparent);pointer-events:auto;display:flex}
-#menu{width:360px;background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));border-radius:12px;padding:22px;text-align:center;color:var(--muted);}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#overlay.visible{background:linear-gradient(0deg,rgba(0,0,0,0.5),transparent);pointer-events:auto}
+#overlay.visible #menu{display:block}
+#menu{width:360px;background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));border-radius:12px;padding:22px;text-align:center;color:var(--muted);display:none}
 #menu h1{margin:0;color:var(--accent);font-size:34px}
 .buttons{display:flex;gap:8px;justify-content:center;margin:14px 0}
 button{background:var(--accent);border:none;padding:10px 16px;border-radius:8px;font-weight:700;color:#012;text-transform:uppercase;cursor:pointer}
